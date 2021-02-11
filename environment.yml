@@ -1,0 +1,6 @@
+name: quantum_ddm
+dependencies:
+  - numpy
+  - m2w64-gcc-fortran
+  - libpython
+  - scipy
