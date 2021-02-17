@@ -69,22 +69,6 @@ def harmonic(nt: int = 900, omega: float = 50.0):
 
 def main():
 
-    # Run and check that things are working like the Fortran code
-    eig_values, eig_vectors, analytic, dens0, dens1, anal0,  anal1 = harmonic(nt=900, omega=50.0)
-
-    # Let check things against the fortran results
-    f16 = np.loadtxt('src/fortran/fort.16', skiprows=1)
-    assert np.allclose(f16[:, 2], eig_values)
-    assert np.allclose(f16[:, 3], analytic)
-
-    f17 = np.loadtxt('src/fortran/fort.17', skiprows=1)
-    assert np.allclose(f17[:, 2], dens0)
-    assert np.allclose(f17[:, 5], dens1)
-
-    f18 = np.loadtxt('src/fortran/fort.18', skiprows=1)
-    assert np.allclose(f18[:, 2], anal0)
-    assert np.allclose(f18[:, 4], anal1)
-
     #%%
     # Now lets time things
     import timeit
