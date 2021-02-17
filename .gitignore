@@ -4,6 +4,9 @@
 
 ### Python ###
 
+# Generated version
+src/tise_solver/version.py
+
 # PyCharm Project
 .idea/
 
