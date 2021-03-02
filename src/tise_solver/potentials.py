@@ -27,7 +27,7 @@ def n_square_wells(widths: List[float],
         raise ValueError("Length of wells widths and depths must be equal.")
 
     if len(depths)-1 != len(separations):
-        raise ValueError("The length of seprations must be one less than the number of wells (len(depths))")
+        raise ValueError("The length of separations must be one less than the number of wells (len(depths))")
 
     max_depth = max(depths)
 
@@ -41,7 +41,7 @@ def n_square_wells(widths: List[float],
     # separations
     edges = [0, width_bg] + [x for t in zip(widths, separations) for x in t] + [widths[-1], width_bg]
 
-    # The edges are the cumulative sum of all the widths
+    # The edges are the cumulative sum of all the interleaved widths
     edges = np.cumsum(edges)
 
     # Now construct a value array for each set of edges above.

@@ -1,4 +1,5 @@
 import math
+import pytest
 import numpy as np
 from tise_solver.potentials import n_square_wells, two_square_wells
 
@@ -18,3 +19,17 @@ def test_two_square_wells():
     # This should be exactly equal
     assert np.all(v(x) == v2)
 
+
+def test_exceptions():
+
+    """Check that improper parameters generate proper exceptions."""
+    with pytest.raises(ValueError) as ex:
+        v = n_square_wells(widths=[1, 2], depths=[1], separations=[1])
+
+    assert "widths and depths must be equal" in str(ex.value)
+
+    """Check that improper parameters generate proper exceptions."""
+    with pytest.raises(ValueError) as ex:
+        v = n_square_wells(widths=[1, 2], depths=[1, 2], separations=[1, 2])
+
+    assert "separations must be one less than the number of wells" in str(ex.value)
