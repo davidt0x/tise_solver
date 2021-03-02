@@ -1,13 +1,14 @@
 import math
 import numpy as np
 
-from typing import List, Union, Callable
+from typing import List, Union, Callable, Tuple
 
 
 def n_square_wells(widths: List[float],
                    depths: List[float],
                    separations: List[float],
-                   width_bg: Union[float, None] = None) -> Callable:
+                   width_bg: Union[float, None] = None
+                   ) -> Callable[[Union[float, np.ndarray]], Union[float, np.ndarray]]:
     """
     Return a potential function V(x) for N non-uniform square wells.
 
@@ -53,6 +54,46 @@ def n_square_wells(widths: List[float],
         return values[np.searchsorted(edges, x)]
 
     return V
+
+
+def n_square_wells_bounds(widths: List[float],
+                         depths: List[float],
+                         separations: List[float],
+                         width_bg: Union[float, None] = None) -> List[Tuple[float, float]]:
+    """
+    Return a list of bounds for the N square wells.
+
+    Args:
+        widths: A list of widths for each well.
+        depths: A list of depths for each well. Must be the same length as widths.
+        separations: A list of N - 1 seperations. seperations[i] is the distance between well_i and well_i+1.
+        width_bg: The width from the lower bound of the domain and the leftmost edge of the first well. Similarly,
+            the width from the rightmost edge of the last well and the upper bound of the domain. If None, then
+            width_bg = int(np.ceil(10.0 * 2 * math.pi * (1 / np.sqrt(2.0 * max(depths)))), FIXME: Why does Lena do this?
+
+    Returns:
+        A list of two element tuples, one for each well. Each tuple defines the (lower_bound, upper_bound) of the well.
+    """
+
+    if len(depths) != len(widths):
+        raise ValueError("Length of wells widths and depths must be equal.")
+
+    if len(depths) - 1 != len(separations):
+        raise ValueError("The length of separations must be one less than the number of wells (len(depths))")
+
+    # This is how Lena's code computes width of background, do that for now if nothing is passed.
+    if width_bg is None:
+        dx1 = 1 / np.sqrt(2.0 * max(depths))
+        lamb = 2 * math.pi * dx1
+        width_bg = np.ceil(10.0 * lamb)
+
+    bounds = [(width_bg, width_bg + widths[0])]
+    for i in range(1, len(widths)):
+        lower = bounds[i - 1][1] + separations[i-1]
+        upper = lower + widths[i]
+        bounds.append((lower, upper))
+
+    return bounds
 
 
 def two_square_wells(d1: float = 10.0, d2: float = 12.0, w1: float = 7.0, w2: float = 5.0, w_sep: float = 2.5):

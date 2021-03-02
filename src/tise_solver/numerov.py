@@ -137,7 +137,7 @@ def numerov(d1: float = 10.0, d2: float = 12.0, w1: float = 7.0, w2: float = 5.0
     t2_E = E_dom[1, ~np.isnan(E_dom[1, :])]
     t3_E = E_dom[2, ~np.isnan(E_dom[2, :])]
 
-    return dict(v=v, x=x, E=E, t1_E=t1_E, t2_E=t2_E, t3_E=t3_E, psi=psi, dens=dens, p_1=p_1, p_2=p_2, p_int=p_int, p_bg=p_bg)
+    return dict(v=v, E=E, t1_E=t1_E, t2_E=t2_E, t3_E=t3_E, psi=psi, dens=dens, p_1=p_1, p_2=p_2, p_int=p_int, p_bg=p_bg)
 
 
 def main():
