@@ -2,7 +2,20 @@ import math
 import numpy as np
 
 
-def get_p_2W(d1: float = 10.0, d2: float = 12.0, w1: float = 7.0, w2: float = 5.0, w_sep: float = 2.5):
+def numerov(d1: float = 10.0, d2: float = 12.0, w1: float = 7.0, w2: float = 5.0, w_sep: float = 2.5):
+    """
+    Solve the TISE via the matrix numerov method.
+
+    Args:
+        d1: Depth of the first well.
+        d2: Depth of the second well.
+        w1: Width of the first well
+        w2: Width of the second well.
+        w_sep: Width of the barrier between two wells
+
+    Returns:
+
+    """
     w = np.array([w1, w_sep, w2])
 
     bg = max(d1, d2)
@@ -128,7 +141,7 @@ def get_p_2W(d1: float = 10.0, d2: float = 12.0, w1: float = 7.0, w2: float = 5.
 
 
 def main():
-    r = get_p_2W()
+    r = numerov()
 
 
 if __name__ == "__main__":

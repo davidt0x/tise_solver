@@ -1,4 +1,6 @@
 #%%
+from typing import List
+
 import math
 import numpy as np
 from scipy.linalg.lapack import dsyevd
