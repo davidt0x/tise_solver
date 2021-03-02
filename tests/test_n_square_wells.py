@@ -1,11 +1,20 @@
-from tise_solver.potentials import n_square_wells
+import math
+import numpy as np
+from tise_solver.potentials import n_square_wells, two_square_wells
 
-def test_n_square_wells():
 
-    width_bg = 3
-    widths = [2, 2, 3]
-    depths = [4, 5]
-    separations = [1, 2, 1]
+def test_two_square_wells():
+    """Test the generalized N wells function againts Lena's 2 well code."""
 
-    V = n_square_wells(widths=widths, depths=depths, separations=separations, width_bg=width_bg)
+    # Lets test 2 wells
+    widths = [7.0, 5.0]
+    depths = [10.0, 12.0]
+    separations = [2.5]
+
+    v = n_square_wells(widths=widths, depths=depths, separations=separations)
+
+    x, v2 = two_square_wells(d1=depths[0], d2=depths[1], w1=widths[0], w2=widths[1], w_sep=separations[0])
+
+    # This should be exactly equal
+    assert np.all(v(x) == v2)
 
