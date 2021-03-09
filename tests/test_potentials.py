@@ -44,11 +44,17 @@ def test_scalar_x():
 
 
 @pytest.mark.parametrize("widths,depths,separations,width_bg", [
-    ([7.0, 5.0], [10.0, 12.0], [2.5], None)
+    # ([7.0], [10.0], [], 2.0),
+    # ([7.0, 5.0], [10.0, 12.0], [2.5], None),
+    # ([1.0, 2.0, 3.0], [100.0, 12.0, 3.0], [5.0, 6.0], 20.0),
+    ([1.0, 2.0, 3.0], [100.0, 12.0, 3.0], [0.0, 6.0], 20.0),
 ])
 def test_square_well_bounds(widths, depths, separations, width_bg):
     v = n_square_wells(widths=widths, depths=depths, separations=separations, width_bg=width_bg)
     bounds = n_square_wells_bounds(widths=widths, depths=depths, separations=separations, width_bg=width_bg)
+
+    # Make sure we have the same number of wells and bounds tuples.
+    assert len(widths) == len(bounds)
 
     # Check that the values sampled from between well upper and lower bounds equal correct values
     max_depth = max(depths)
@@ -59,7 +65,8 @@ def test_square_well_bounds(widths, depths, separations, width_bg):
         if i == 0:
             assert np.all(v(np.linspace(0.0, lower, num=100)) == max_depth)
         else:
-            assert np.all(v(np.linspace(bounds[i-1][1]+1e-8, lower, num=100)) == max_depth)
+            if bounds[i-1][1] != lower:
+                assert np.all(v(np.linspace(bounds[i-1][1]+1e-8, lower, num=100)) == max_depth)
 
     # Check the rightmost side background, just check an aribitrary amount outside the domain
     assert np.all(v(np.linspace(bounds[-1][1] + 1e-8, bounds[-1][1] + 100.0, num=100)) == max_depth)

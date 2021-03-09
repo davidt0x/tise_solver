@@ -17,15 +17,15 @@ def test_get_p_2W():
     w2 = mat['w2']
     w_sep = mat['w_sep']
 
-    r = numerov(d1=d1, d2=d2, w1=w1, w2=w2, w_sep=w_sep)
+    r = numerov(widths=[w1, w2], depths=[d1, d2], separations=[w_sep])
 
-    # Make check to see that all the values that the function returns match
-    for val_name in r:
-        # Check any value with the same name as the matlab code, except psi. These
-        # are the eigenvectors which can have opposite direction. dens is their elementwise
-        # square which is checked.
-        if val_name in mat and val_name != 'psi':
-            assert np.allclose(mat[val_name], r[val_name]), f"{val_name} did not match"
-
+    assert np.allclose(mat['v'], r['v'])
+    assert np.allclose(mat['E'], r['E'])
+    assert np.allclose(mat['psi'], r['psi'])
+    assert np.allclose(mat['dens'], r['dens'])
+    assert np.allclose(mat['p_1'], r['p_wells'][0, :])
+    assert np.allclose(mat['p_2'], r['p_wells'][1, :])
+    assert np.allclose(mat['p_int'], r['p_int'][0, :])
+    assert np.allclose(mat['p_bg'], r['p_bg'])
 
 

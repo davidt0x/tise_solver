@@ -1,79 +1,61 @@
 import math
 import numpy as np
 
+from typing import List, Union
 
-def numerov(d1: float = 10.0, d2: float = 12.0, w1: float = 7.0, w2: float = 5.0, w_sep: float = 2.5):
+from tise_solver.potentials import n_square_wells, n_square_wells_bounds
+
+
+def numerov(widths: List[float],
+            depths: List[float],
+            separations: List[float],
+            width_bg: Union[float, None] = None):
     """
     Solve the TISE via the matrix numerov method.
 
     Args:
-        d1: Depth of the first well.
-        d2: Depth of the second well.
-        w1: Width of the first well
-        w2: Width of the second well.
-        w_sep: Width of the barrier between two wells
+        widths: A list of widths for each well.
+        depths: A list of depths for each well. Must be the same length as widths.
+        separations: A list of N - 1 seperations. seperations[i] is the distance between well_i and well_i+1.
+        width_bg: The width from the lower bound of the domain and the leftmost edge of the first well. Similarly,
+            the width from the rightmost edge of the last well and the upper bound of the domain. If None, then
+            width_bg = int(np.ceil(10.0 * 2 * math.pi * (1 / np.sqrt(2.0 * max(depths)))), FIXME: Why does Lena do this?
 
     Returns:
 
     """
-    w = np.array([w1, w_sep, w2])
 
-    bg = max(d1, d2)
-    pot_heights = np.array([bg, bg - d1, bg, bg - d2, bg])
+    bg = max(depths)
     beta = 2
 
     # find the minimum debroglie wavelength:
     dx1 = 1 / np.sqrt(beta * bg)
-    dx2 = np.nanmin(w) / 5.0
+    dx2 = np.min(widths) / 5.0
     # note temporary difference: 020421
     # dx = min(dx1, dx2) / 100;
     dx = min(dx1, dx2)
 
     lamb = 2 * math.pi * dx1
 
-    pw = w
-    pw[np.isnan(pw)] = 0.0
-    w1, w_sep, w2 = pw
-    n_t1 = int(np.ceil(w1 / dx))
-    n_t2 = int(np.ceil(w2 / dx))
-    n_sep = int(np.ceil(w_sep / dx))
-
     # w_bg = ceil(2.5 * lamb)
     # temp change, 020121
-    w_bg = int(np.ceil(10.0 * lamb))
-    n_bg = int(np.ceil(w_bg / dx))
+    if width_bg is None:
+        width_bg = int(np.ceil(10.0 * lamb))
 
-    pot_widths = np.concatenate(([w_bg], pw, [w_bg]))
+    pot_widths = np.concatenate(([width_bg], widths, [width_bg]))
     w_tot = np.sum(pot_widths)
 
-    n_steps = n_t1 + n_t2 + n_sep + 2 * n_bg
+    # Discretize the domain of the potential
+    n_steps = int(sum([np.ceil(w/dx) for w in pot_widths]))
     x = np.linspace(0, w_tot, n_steps)
     del_x = x[1] - x[0]
-    v = np.zeros(n_steps)
-    # build your v
-    bounds = np.zeros(len(pot_widths) + 1)
-    bounds[-1] = w_tot
 
-    for j in range(1, len(pot_widths)):
-        bounds[j] = np.sum(pot_widths[0:j])
+    # Get the potential function and evaluate it at all discrete x positions
+    v = n_square_wells(widths=widths, depths=depths, separations=separations, width_bg=width_bg)
+    v = v(x)
 
-    # background ends at n_bg+1, t1 begins at n_bg+2
-    t1b_int = n_bg + 2
-    t1e_int = t1b_int + n_t1 - 1
-    t2b_int = t1e_int + n_sep
-    t2e_int = t2b_int + n_t2 - 1
-
-    for i in range(n_steps):
-        if x[i] <= bounds[1]:
-            v[i] = pot_heights[0]
-        elif x[i] <= np.sum(bounds[2]):
-            v[i] = pot_heights[1]
-        elif x[i] <= np.sum(bounds[3]):
-            v[i] = pot_heights[2]
-        elif x[i] <= np.sum(bounds[4]):
-            v[i] = pot_heights[3]
-        else:
-            v[i] = pot_heights[4]
+    # Get the bounds of each well
+    bounds = n_square_wells_bounds(widths=widths, depths=depths, separations=separations, width_bg=width_bg)
 
     # solve the schrodinger equation using the numerov matrix method.
     V = np.diag(v)
@@ -95,49 +77,30 @@ def numerov(d1: float = 10.0, d2: float = 12.0, w1: float = 7.0, w2: float = 5.0
     # Compute the probability density by squaring
     dens = psi * psi
 
-    # normalizing the densities
-    p_1 = np.zeros(len(E))
-    p_2 = np.zeros(len(E))
-    p_int = np.zeros(len(E))
-    p_bg = np.zeros(len(E))
-    E_dom = np.empty((3, len(E)))
-    E_dom[:] = np.NaN
+    # normalizing the density
+    dens = dens / np.trapz(dens, axis=0)
 
-    for i in range(len(E)):
-        d = dens[:, i]
-        integral = np.trapz(d)
-        d = d / integral
-        dens[:, i] = d
+    # Compute the individual density for each well and barrier\separation between wells
+    p_wells = np.zeros((len(widths), len(E)))
+    p_int = np.zeros((len(separations), len(E)))
+    for well_i, (lower, upper) in enumerate(bounds):
+        lower_i = int(np.ceil(lower / dx))
+        upper_i = int(np.ceil(upper / dx))
 
-        if pw[0] == 0:
-            p_1[0] = 0
-        else:
-            p_1[i] = np.trapz(d[t1b_int-1:t1e_int])
+        if widths[well_i] != 0:
+            p_wells[well_i, :] = np.trapz(dens[lower_i:upper_i, :], axis=0)
 
-        if pw[2] == 0:
-            p_2[i] = 0
-        else:
-            p_2[i] = np.trapz(d[t2b_int-1:t2e_int])
+        # Compute the separation between this well and the last, don't do this for the first
+        # well because that is the background
+        if well_i > 0 and separations[well_i-1] > 0.0:
+            barrier_upper = bounds[well_i-1][1] # Upper bound of the previous well is the lower bound of the barrier
+            barrier_upperi = int(np.ceil(barrier_upper / dx))
+            p_int[well_i-1, :] = np.trapz(dens[barrier_upperi:lower_i, :], axis=0)
 
-        if pw[1] == 0:
-            p_int[i] = 0
-        else:
-            p_int[i] = np.trapz(d[t1e_int:t2b_int - 1])
+    # Compute the probability for the background
+    p_bg = 1 - (np.sum(p_wells, axis=0) + np.sum(p_int, axis=0))
 
-        p_bg[i] = 1 - np.sum([p_1[i], p_2[i], p_int[i]])
-
-        if p_1[i] > p_2[i] and p_1[i] > p_bg[i]:
-            E_dom[0, i] = E[i]
-        elif p_2[i] > p_1[i] and p_2[i] > p_bg[i]:
-            E_dom[1, i] = E[i]
-        else:
-            E_dom[2, i] = E[i]
-
-    t1_E = E_dom[0, ~np.isnan(E_dom[0, :])]
-    t2_E = E_dom[1, ~np.isnan(E_dom[1, :])]
-    t3_E = E_dom[2, ~np.isnan(E_dom[2, :])]
-
-    return dict(v=v, E=E, t1_E=t1_E, t2_E=t2_E, t3_E=t3_E, psi=psi, dens=dens, p_1=p_1, p_2=p_2, p_int=p_int, p_bg=p_bg)
+    return dict(v=v, E=E, psi=psi, dens=dens, p_wells=p_wells, p_int=p_int, p_bg=p_bg)
 
 
 def main():

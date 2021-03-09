@@ -30,6 +30,15 @@ def n_square_wells(widths: List[float],
     if len(depths)-1 != len(separations):
         raise ValueError("The length of separations must be one less than the number of wells (len(depths))")
 
+    # Convert to floats if needed
+    widths = np.array(widths, dtype=np.float64)
+    depths = np.array(depths, dtype=np.float64)
+    separations = np.array(separations, dtype=np.float64)
+
+    if width_bg is not None:
+        width_bg = float(width_bg)
+
+
     max_depth = max(depths)
 
     # This is how Lena's code computes width of background, do that for now if nothing is passed.
