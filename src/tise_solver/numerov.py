@@ -42,7 +42,8 @@ def numerov(widths: List[float],
     if width_bg is None:
         width_bg = int(np.ceil(10.0 * lamb))
 
-    pot_widths = np.concatenate(([width_bg], widths, [width_bg]))
+    # Concatenate all the widths (background, wells, separations)
+    pot_widths = [width_bg] + [x for t in zip(widths, separations) for x in t] + [widths[-1], width_bg]
     w_tot = np.sum(pot_widths)
 
     # Discretize the domain of the potential
@@ -84,8 +85,8 @@ def numerov(widths: List[float],
     p_wells = np.zeros((len(widths), len(E)))
     p_int = np.zeros((len(separations), len(E)))
     for well_i, (lower, upper) in enumerate(bounds):
-        lower_i = int(np.ceil(lower / dx))
-        upper_i = int(np.ceil(upper / dx))
+        lower_i = int(np.ceil(lower / dx)) + 1
+        upper_i = int(np.ceil(upper / dx)) + 2
 
         if widths[well_i] != 0:
             p_wells[well_i, :] = np.trapz(dens[lower_i:upper_i, :], axis=0)
@@ -94,7 +95,7 @@ def numerov(widths: List[float],
         # well because that is the background
         if well_i > 0 and separations[well_i-1] > 0.0:
             barrier_upper = bounds[well_i-1][1] # Upper bound of the previous well is the lower bound of the barrier
-            barrier_upperi = int(np.ceil(barrier_upper / dx))
+            barrier_upperi = int(np.ceil(barrier_upper / dx)) + 2
             p_int[well_i-1, :] = np.trapz(dens[barrier_upperi:lower_i, :], axis=0)
 
     # Compute the probability for the background
