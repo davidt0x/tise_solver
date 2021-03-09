@@ -11,7 +11,7 @@ def numerov(widths: List[float],
             separations: List[float],
             width_bg: Union[float, None] = None):
     """
-    Solve the TISE via the matrix numerov method.
+    Solve the TISE for a potential with N square wells via the matrix numerov method.
 
     Args:
         widths: A list of widths for each well.

@@ -1,4 +1,6 @@
+import pytest
 import numpy as np
+
 from scipy.io import loadmat
 
 from tise_solver.numerov import numerov
@@ -29,3 +31,11 @@ def test_get_p_2W():
     assert np.allclose(mat['p_bg'], r['p_bg'])
 
 
+@pytest.mark.parametrize("widths,depths,separations,width_bg", [
+    ([7.0], [10.0], [], 2.0),
+    ([7.0, 5.0], [10.0, 12.0], [2.5], None),
+    ([1.0, 2.0, 3.0], [100.0, 12.0, 3.0], [5.0, 6.0], 20.0),
+    ([1.0, 2.0, 3.0], [100.0, 12.0, 3.0], [0.0, 6.0], 20.0),
+])
+def test_N_wells_numerov(widths, depths, separations, width_bg):
+    r = numerov(widths=widths, depths=depths, separations=separations, width_bg=width_bg)
