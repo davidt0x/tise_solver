@@ -30,12 +30,13 @@ def numerov(widths: List[float],
 
     # find the minimum debroglie wavelength:
     dx1 = 1 / np.sqrt(beta * bg)
-    dx2 = np.min(widths) / 5.0
+    #dx2 = np.min(widths) / 5.0
     # note temporary difference: 020421
     # dx = min(dx1, dx2) / 100;
-    dx = min(dx1, dx2)
+    #dx = min(dx1, dx2)
+    dx = dx1
 
-    lamb = 2 * math.pi * dx1
+    lamb = 2 * math.pi * dx
 
     # w_bg = ceil(2.5 * lamb)
     # temp change, 020121
