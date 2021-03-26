@@ -43,6 +43,11 @@ def test_N_wells_numerov(widths, depths, separations, width_bg):
 
 @pytest.mark.parametrize("width,depth,separation,width_bg", [
     (3.0, 10.0, [], None),
+    (3.0, 20.0, [], None),
+    (2.0, 6.0, [], None),
+    (10.0, 3.0, [], None),
+    (4.0, 30.0, [], None),
+    # (2.234, 6.1043, [], None), # FIXME: Numerical solution tolerance needs to be lower for non-integer values?
 ])
 def test_one_well_numerov(width, depth, separation, width_bg):
     r = numerov(widths=[width], depths=[depth], separations=separation, width_bg=width_bg)
