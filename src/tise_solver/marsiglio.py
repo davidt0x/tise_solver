@@ -121,15 +121,14 @@ def marsiglio(
     H = np.zeros((nt, nt))
 
     # Construct the upper triangle of our matrix, with diagonal
-    n, m = np.triu_indices(n=nt, k=0)
-    m_prime = (m * math.pi) / a
-    n_prime = (n * math.pi) / a
+    n, m = np.triu_indices(n=nt, k=1)
+    m_prime = ((m+1) * math.pi) / a
+    n_prime = ((n+1) * math.pi) / a
     mpn = m_prime + n_prime
     mmn = m_prime - n_prime
     for well_i, (lower, upper) in enumerate(bounds):
         if lower != upper:
             V_i = v( (lower+upper)/2.0 ) # Just get the potential in the middle of the well, should be constant anyway
-            c = V_i / (a * E1)
 
             # We are normalizing the x domain to be between 0 and 1. Note, this is done after evaluating
             # the potential above, since v is in terms of the original widths
@@ -143,7 +142,7 @@ def marsiglio(
     H = np.diag(((np.arange(nt) + 1)**2 * math.pi**2) / (2.0 * a**2)) - H
 
     # Get the eigen values and vectors using LAPACK
-    eig_values, eig_vectors, info = dsyevd(H)
+    E, psi, info = dsyevd(H)
 
     # Check if things went well
     if info < 0:
@@ -151,7 +150,13 @@ def marsiglio(
     elif info > 0:
         raise ValueError("Eigensolver failed to converge.")
 
-    return eig_values, eig_vectors
+    # Eigen values already sorted (from least to greatest) from dsyevd
+    # Take only the eigenvectors greater than 0 and less than bg
+    inds = np.where((E > 0) & (E < bg))[0]
+    E = E[inds]
+    psi = psi[:, inds]
+
+    return E, psi
 
 
 def main():

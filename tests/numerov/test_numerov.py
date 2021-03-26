@@ -4,6 +4,7 @@ import numpy as np
 from scipy.io import loadmat
 
 from tise_solver.numerov import numerov
+from tise_solver.one_well_analytic import one_well_energies
 
 
 def test_get_p_2W():
@@ -39,3 +40,14 @@ def test_get_p_2W():
 ])
 def test_N_wells_numerov(widths, depths, separations, width_bg):
     r = numerov(widths=widths, depths=depths, separations=separations, width_bg=width_bg)
+
+@pytest.mark.parametrize("width,depth,separation,width_bg", [
+    (3.0, 10.0, [], None),
+])
+def test_one_well_numerov(width, depth, separation, width_bg):
+    r = numerov(widths=[width], depths=[depth], separations=separation, width_bg=width_bg)
+    E = r['E']
+
+    s = one_well_energies(depth=depth, width=width)
+
+    assert np.allclose(E, s, atol=1e-1)

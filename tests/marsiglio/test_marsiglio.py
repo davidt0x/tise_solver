@@ -1,4 +1,5 @@
 from tise_solver.marsiglio import harmonic, marsiglio
+from tise_solver.one_well_analytic import one_well_energies
 
 import pytest
 import numpy as np
@@ -38,7 +39,16 @@ def test_marsiglio_n_wells(widths, depths, separations, width_bg):
 
 N_MANY_WELLS = 100
 @pytest.mark.parametrize("widths,depths,separations,width_bg", [
-    ([i*5.0 for i in range(N_MANY_WELLS)], [float(i) for i in range(N_MANY_WELLS)], [2.0]*(N_MANY_WELLS-1), 10.0)
+    ([i*5.0 for i in range(1,N_MANY_WELLS+1)], [float(i) for i in range(1,N_MANY_WELLS+1)], [2.0]*(N_MANY_WELLS-1), 10.0)
 ])
 def test_many_wells(widths, depths, separations, width_bg):
     vals, vecs = marsiglio(widths=widths, depths=depths, separations=separations, width_bg=width_bg, nt=900)
+
+
+@pytest.mark.parametrize("width,depth,separation,width_bg", [
+    (3.0, 10.0, [], 0.0),
+])
+def test_one_well_marsiglio(width, depth, separation, width_bg):
+    r = marsiglio(widths=[width], depths=[depth], separations=separation, width_bg=width_bg)
+
+    s = one_well_energies(depth=depth, width=width)

@@ -19,7 +19,7 @@ def numerov(widths: List[float],
         separations: A list of N - 1 seperations. seperations[i] is the distance between well_i and well_i+1.
         width_bg: The width from the lower bound of the domain and the leftmost edge of the first well. Similarly,
             the width from the rightmost edge of the last well and the upper bound of the domain. If None, then
-            width_bg = int(np.ceil(10.0 * 2 * math.pi * (1 / np.sqrt(2.0 * max(depths)))), FIXME: Why does Lena do this?
+            width_bg = int(np.ceil(10.0 * 2 * math.pi * (1 / np.sqrt(2.0 * max(depths))))
 
     Returns:
 
@@ -28,18 +28,15 @@ def numerov(widths: List[float],
     bg = max(depths)
     beta = 2
 
-    # find the minimum debroglie wavelength:
-    dx1 = 1 / np.sqrt(beta * bg)
-    #dx2 = np.min(widths) / 5.0
-    # note temporary difference: 020421
-    # dx = min(dx1, dx2) / 100;
-    #dx = min(dx1, dx2)
-    dx = dx1
+    # If this is the one well case, compute dx like this
+    if len(depths) == 1:
+        lamb = ((2.0*np.pi)/np.sqrt(beta))*(1.0/np.sqrt(bg))
+        dx = 0.5 * (lamb / (2.0 * np.pi))
+    else:
+        # find the minimum debroglie wavelength:
+        dx = 1 / np.sqrt(beta * bg)
+        lamb = 2 * math.pi * dx
 
-    lamb = 2 * math.pi * dx
-
-    # w_bg = ceil(2.5 * lamb)
-    # temp change, 020121
     if width_bg is None:
         width_bg = int(np.ceil(10.0 * lamb))
 
