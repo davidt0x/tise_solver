@@ -183,3 +183,22 @@ def two_square_wells(d1: float = 10.0, d2: float = 12.0, w1: float = 7.0, w2: fl
             v[i] = pot_heights[4]
 
     return x, v
+
+
+def calc_min_debroglie_wavelength(max_depth: float):
+    """Calculate the minimum deborglie wavelength for an N square well potential with maximum depth"""
+    return 2.0 * math.pi/(np.sqrt(2.0 * max_depth));
+
+def calc_background_width(max_depth: float):
+    return 2.0 * calc_min_debroglie_wavelength(max_depth)
+
+    # find the minimum debroglie wavelength:
+    lamb=2*math.pi/(sqrt(2.0 * max_depth));
+
+    # define step size based on lambda
+    dx = lamb / (2.0 * pi);
+
+    # set the width of the background (for either side)
+    width_bg = 2.0 * lamb;
+
+    return width_bg

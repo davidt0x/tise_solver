@@ -1,7 +1,11 @@
 import math
 import pytest
 import numpy as np
+
+from scipy.io import loadmat
+
 from tise_solver.potentials import n_square_wells, n_square_wells_bounds, two_square_wells
+from tise_solver.one_well_analytic import one_well_energies
 
 
 def test_two_square_wells():
@@ -68,5 +72,6 @@ def test_square_well_bounds(widths, depths, separations, width_bg):
             if bounds[i-1][1] != lower:
                 assert np.all(v(np.linspace(bounds[i-1][1]+1e-8, lower, num=100)) == max_depth)
 
-    # Check the rightmost side background, just check an aribitrary amount outside the domain
+    # Check the rightmost side background, just check an arbitrary amount outside the domain
     assert np.all(v(np.linspace(bounds[-1][1] + 1e-8, bounds[-1][1] + 100.0, num=100)) == max_depth)
+

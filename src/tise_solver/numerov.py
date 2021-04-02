@@ -1,15 +1,16 @@
 import math
 import numpy as np
 
-from typing import List, Union
+from typing import List, Union, Optional
 
-from tise_solver.potentials import n_square_wells, n_square_wells_bounds
+from tise_solver.potentials import n_square_wells, n_square_wells_bounds, calc_min_debroglie_wavelength, calc_background_width
 
 
 def numerov(widths: List[float],
             depths: List[float],
-            separations: List[float],
-            width_bg: Union[float, None] = None):
+            separations: List[float] = None,
+            width_bg: Optional[float] = None,
+            dx: Optional[float] = None):
     """
     Solve the TISE for a potential with N square wells via the matrix numerov method.
 
@@ -19,26 +20,25 @@ def numerov(widths: List[float],
         separations: A list of N - 1 seperations. seperations[i] is the distance between well_i and well_i+1.
         width_bg: The width from the lower bound of the domain and the leftmost edge of the first well. Similarly,
             the width from the rightmost edge of the last well and the upper bound of the domain. If None, then
-            width_bg = int(np.ceil(10.0 * 2 * math.pi * (1 / np.sqrt(2.0 * max(depths))))
+            width_bg = 2.0 * tise_solver.potentials.
+        dx: The step size to use when discretized the potential. Defaults to
+            calc_min_debroglie_wavelength(max(depths)) / (2.0 * math.pi)
 
     Returns:
 
     """
 
-    bg = max(depths)
-    beta = 2
-
-    # If this is the one well case, compute dx like this
-    if len(depths) == 1:
-        lamb = ((2.0*np.pi)/np.sqrt(beta))*(1.0/np.sqrt(bg))
-        dx = 0.5 * (lamb / (2.0 * np.pi))
-    else:
-        # find the minimum debroglie wavelength:
-        dx = 1 / np.sqrt(beta * bg)
-        lamb = 2 * math.pi * dx
+    if separations is None:
+        if len(depths) != 1:
+            raise ValueError("Must pass a list separation widths for more than one well!")
+        else:
+            separations = []
 
     if width_bg is None:
-        width_bg = int(np.ceil(10.0 * lamb))
+        width_bg = calc_background_width(max(depths))
+
+    if dx is None:
+        dx = calc_min_debroglie_wavelength(max(depths)) / (2.0 * math.pi)
 
     # Concatenate all the widths (background, wells, separations)
     pot_widths = [width_bg] + [x for t in zip(widths, separations) for x in t] + [widths[-1], width_bg]
@@ -58,6 +58,7 @@ def numerov(widths: List[float],
 
     # solve the schrodinger equation using the numerov matrix method.
     V = np.diag(v)
+    beta = 2.0
     A = (-1.0 / beta) * (1.0 / dx**2.0) * (np.diag(-2.0 * np.ones(n_steps)) + np.diag(np.ones(n_steps - 1), -1) + np.diag(np.ones(n_steps - 1), 1))
     B = (1/12) * (np.diag(10 * np.ones(n_steps)) + np.diag(np.ones(n_steps - 1), -1) + np.diag(np.ones(n_steps - 1), 1))
     sys_eq = np.linalg.lstsq(B, A, rcond=None)[0] + V
@@ -69,7 +70,7 @@ def numerov(widths: List[float],
     psi = psi[:, idx]
 
     # Take only the eigenvectors greater than 0 and less than bg
-    inds = np.where((E > 0) & (E < bg))[0]
+    inds = np.where((E > 0) & (E < max(depths)))[0]
     E = E[inds]
     psi = psi[:, inds]
 

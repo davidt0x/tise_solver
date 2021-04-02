@@ -9,7 +9,7 @@ from tise_solver.one_well_analytic import one_well_energies
 
 def test_get_p_2W():
     """
-    Test the output for the matrix numerov method against the MATLAB implementation.
+    Test the output for the matrix numerov method against the MATLAB implementation. This is Lena's 2-well code.
     """
     mat = loadmat('tests/numerov/get_p_2W.mat', squeeze_me=True)
 
@@ -32,6 +32,15 @@ def test_get_p_2W():
     assert np.allclose(mat['p_bg'], r['p_bg'])
 
 
+def test_one_well_numerov():
+    """Test the one well analytic solution code against the original one well matlab code from Lena"""
+    r = numerov(widths=[3.0], depths=[10.0])
+
+    mat = loadmat('tests/numerov/get_p_1W.mat', squeeze_me=True)
+    E = mat['E']
+
+    assert np.allclose(r['E'], E)
+
 @pytest.mark.parametrize("widths,depths,separations,width_bg", [
     ([7.0], [10.0], [], 2.0),
     ([7.0, 5.0], [10.0, 12.0], [2.5], None),
@@ -43,14 +52,13 @@ def test_N_wells_numerov(widths, depths, separations, width_bg):
 
 @pytest.mark.parametrize("width,depth,separation,width_bg", [
     (3.0, 10.0, [], None),
-    (3.0, 20.0, [], None),
     (2.0, 6.0, [], None),
-    (10.0, 3.0, [], None),
+    (5.0, 3.0, [], None),
     (4.0, 30.0, [], None),
-    # (2.234, 6.1043, [], None), # FIXME: Numerical solution tolerance needs to be lower for non-integer values?
+    (2.234, 6.1043, [], None),
 ])
 def test_one_well_numerov(width, depth, separation, width_bg):
-    r = numerov(widths=[width], depths=[depth], separations=separation, width_bg=width_bg)
+    r = numerov(widths=[width], depths=[depth], separations=separation, width_bg=width_bg, dx=0.01)
     E = r['E']
 
     s = one_well_energies(depth=depth, width=width)
