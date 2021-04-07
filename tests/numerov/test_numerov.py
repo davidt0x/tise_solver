@@ -50,6 +50,7 @@ def test_one_well_numerov():
 def test_N_wells_numerov(widths, depths, separations, width_bg):
     r = numerov(widths=widths, depths=depths, separations=separations, width_bg=width_bg)
 
+@pytest.mark.parametrize("method", ['sparse', 'dense'])
 @pytest.mark.parametrize("width,depth,separation,width_bg", [
     (3.0, 10.0, [], None),
     (2.0, 6.0, [], None),
@@ -57,8 +58,8 @@ def test_N_wells_numerov(widths, depths, separations, width_bg):
     (4.0, 30.0, [], None),
     (2.234, 6.1043, [], None),
 ])
-def test_one_well_numerov(width, depth, separation, width_bg):
-    r = numerov(widths=[width], depths=[depth], separations=separation, width_bg=width_bg, dx=0.01)
+def test_one_well_numerov(method, width, depth, separation, width_bg):
+    r = numerov(widths=[width], depths=[depth], separations=separation, width_bg=width_bg, dx=0.01, method=method)
     E = r['E']
 
     s = one_well_energies(depth=depth, width=width)

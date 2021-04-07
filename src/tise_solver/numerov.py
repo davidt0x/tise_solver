@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import scipy
 
 from typing import List, Union, Optional
 
@@ -10,7 +11,8 @@ def numerov(widths: List[float],
             depths: List[float],
             separations: List[float] = None,
             width_bg: Optional[float] = None,
-            dx: Optional[float] = None):
+            dx: Optional[float] = None,
+            method: str = 'dense'):
     """
     Solve the TISE for a potential with N square wells via the matrix numerov method.
 
@@ -23,6 +25,8 @@ def numerov(widths: List[float],
             width_bg = 2.0 * tise_solver.potentials.
         dx: The step size to use when discretized the potential. Defaults to
             calc_min_debroglie_wavelength(max(depths)) / (2.0 * math.pi)
+        method: A string (either 'sparse' or 'dense'), which tells the function to use a dense or sparse eigensolver
+            for computing the solution. Default is dense.
 
     Returns:
 
@@ -57,12 +61,32 @@ def numerov(widths: List[float],
     bounds = n_square_wells_bounds(widths=widths, depths=depths, separations=separations, width_bg=width_bg)
 
     # solve the schrodinger equation using the numerov matrix method.
-    V = np.diag(v)
     beta = 2.0
-    A = (-1.0 / beta) * (1.0 / dx**2.0) * (np.diag(-2.0 * np.ones(n_steps)) + np.diag(np.ones(n_steps - 1), -1) + np.diag(np.ones(n_steps - 1), 1))
-    B = (1/12) * (np.diag(10 * np.ones(n_steps)) + np.diag(np.ones(n_steps - 1), -1) + np.diag(np.ones(n_steps - 1), 1))
-    sys_eq = np.linalg.lstsq(B, A, rcond=None)[0] + V
-    E, psi  = np.linalg.eig(sys_eq)
+
+    if method == 'dense':
+        V = np.diag(v)
+        A = (-1.0 / beta) * (1.0 / dx ** 2.0) * (np.diag(-2.0 * np.ones(n_steps)) +
+                                                 np.diag(np.ones(n_steps - 1), -1) +
+                                                 np.diag(np.ones(n_steps - 1), 1))
+        B = (1 / 12) * (np.diag(10 * np.ones(n_steps)) +
+                        np.diag(np.ones(n_steps - 1), -1) +
+                        np.diag(np.ones(n_steps - 1), 1))
+        sys_eq = np.linalg.lstsq(B, A, rcond=None)[0] + V
+        E, psi = np.linalg.eig(sys_eq)
+
+    elif method == 'sparse':
+        V = scipy.sparse.diags([v], [0])
+        A = (-1.0 / beta) * (1.0 / dx**2.0) * scipy.sparse.diags([-2.0 * np.ones(n_steps),
+                                                                  np.ones(n_steps - 1),
+                                                                  np.ones(n_steps - 1)],
+                                                                 [0, -1, 1])
+        B = (1.0 / 12.0) * scipy.sparse.diags([10 * np.ones(n_steps), np.ones(n_steps - 1), np.ones(n_steps - 1)], [0, -1, 1])
+        sys_eq = scipy.sparse.linalg.spsolve(B, A) + V
+
+        # FIXME: We need the equation that Lena said she would provide for k, the number of eigen values to compute
+        E, psi = scipy.sparse.linalg.eigsh(A=sys_eq, k=20, sigma=0)
+    else:
+        raise ValueError("Invalid string passed to method argument, must be either 'sparse' or 'dense'")
 
     # Sort the eigen values (and corresponsding eigenvectors) from least to greatest
     idx = E.argsort()
