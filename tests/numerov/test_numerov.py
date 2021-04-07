@@ -7,7 +7,8 @@ from tise_solver.numerov import numerov
 from tise_solver.one_well_analytic import one_well_energies
 
 
-def test_get_p_2W():
+@pytest.mark.parametrize("method", ['sparse', 'dense'])
+def test_get_p_2W(method):
     """
     Test the output for the matrix numerov method against the MATLAB implementation. This is Lena's 2-well code.
     """
@@ -20,7 +21,7 @@ def test_get_p_2W():
     w2 = mat['w2']
     w_sep = mat['w_sep']
 
-    r = numerov(widths=[w1, w2], depths=[d1, d2], separations=[w_sep])
+    r = numerov(widths=[w1, w2], depths=[d1, d2], separations=[w_sep], method=method)
 
     assert np.allclose(mat['v'], r['v'])
     assert np.allclose(mat['E'], r['E'])
@@ -32,11 +33,12 @@ def test_get_p_2W():
     assert np.allclose(mat['p_bg'], r['p_bg'])
 
 
-def test_one_well_numerov():
+@pytest.mark.parametrize("method", ['sparse', 'dense'])
+def test_one_well_numerov(method):
     """Test the one well analytic solution code against the original one well matlab code from Lena"""
     r = numerov(widths=[3.0], depths=[10.0])
 
-    mat = loadmat('tests/numerov/get_p_1W.mat', squeeze_me=True)
+    mat = loadmat('tests/numerov/get_p_1W.mat', squeeze_me=True, method=method)
     E = mat['E']
 
     assert np.allclose(r['E'], E)
