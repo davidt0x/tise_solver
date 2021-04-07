@@ -1,6 +1,7 @@
 import math
 import numpy as np
-import scipy
+import scipy.sparse
+import scipy.sparse.linalg
 
 from typing import List, Union, Optional
 
@@ -75,12 +76,13 @@ def numerov(widths: List[float],
         E, psi = np.linalg.eig(sys_eq)
 
     elif method == 'sparse':
-        V = scipy.sparse.diags([v], [0])
+        V = scipy.sparse.diags([v], [0], format='csc')
         A = (-1.0 / beta) * (1.0 / dx**2.0) * scipy.sparse.diags([-2.0 * np.ones(n_steps),
                                                                   np.ones(n_steps - 1),
                                                                   np.ones(n_steps - 1)],
-                                                                 [0, -1, 1])
-        B = (1.0 / 12.0) * scipy.sparse.diags([10 * np.ones(n_steps), np.ones(n_steps - 1), np.ones(n_steps - 1)], [0, -1, 1])
+                                                                 [0, -1, 1], format='csc')
+        B = (1.0 / 12.0) * scipy.sparse.diags([10 * np.ones(n_steps), np.ones(n_steps - 1), np.ones(n_steps - 1)],
+                                              [0, -1, 1], format='csc')
         sys_eq = scipy.sparse.linalg.spsolve(B, A) + V
 
         # FIXME: We need the equation that Lena said she would provide for k, the number of eigen values to compute
@@ -124,7 +126,7 @@ def numerov(widths: List[float],
     # Compute the probability for the background
     p_bg = 1 - (np.sum(p_wells, axis=0) + np.sum(p_int, axis=0))
 
-    return dict(v=v, E=E, psi=psi, dens=dens, p_wells=p_wells, p_int=p_int, p_bg=p_bg)
+    return dict(v=v, E=E, psi=psi, dens=dens, p_wells=p_wells, p_int=p_int, p_bg=p_bg, n_steps=n_steps)
 
 
 def main():
