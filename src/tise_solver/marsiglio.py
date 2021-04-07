@@ -1,5 +1,5 @@
 #%%
-from tise_solver.potentials import n_square_wells, n_square_wells_bounds
+from tise_solver.potentials import n_square_wells, n_square_wells_bounds, calc_background_width
 
 from typing import List, Union
 
@@ -96,53 +96,63 @@ def marsiglio(
     
     """
 
-    bg = max(depths)
-    beta = 2
-
-    # find the minimum debroglie wavelength:
-    dx = 1 / np.sqrt(beta * bg)
-    lamb = 2 * math.pi * dx
+    if separations is None:
+        if len(depths) != 1:
+            raise ValueError("Must pass a list separation widths for more than one well!")
+        else:
+            separations = []
 
     if width_bg is None:
-        width_bg = int(np.ceil(10.0 * lamb))
+        width_bg = calc_background_width(max(depths))
 
-    v = n_square_wells(widths=widths, depths=depths, separations=separations, width_bg=width_bg)
     bounds = n_square_wells_bounds(widths=widths, depths=depths, separations=separations, width_bg=width_bg)
 
     # Find the width of the infinite well that all the wells are embedded into
     w_tot = np.sum(widths) + np.sum(separations) + 2.0 * width_bg
 
     # Lets fix the infinite well width to unitary, we will normalize x by w_tot
-    a = 1.0
+    a = w_tot
 
-    # Precompute constant E1
-    E1 = math.pi**2 / (2.0*a**2)
+    V_max = max(depths)
+
+    # Normalize the bounds of the wells
+    # We are normalizing the x domain to be between 0 and 1.
+    normed_bounds = [(lower/w_tot, upper/w_tot) for (lower, upper) in bounds]
+
+    # Compute the eigen energies of the infinite embedding well
+    E_0 = (((np.arange(nt) + 1)) ** 2 * math.pi ** 2) / (2.0 * a ** 2)
 
     H = np.zeros((nt, nt))
 
-    # Construct the upper triangle of our matrix, with diagonal
+    # Construct the non-diagonal portion of the matrix first.
     n, m = np.triu_indices(n=nt, k=1)
     m_prime = ((m+1) * math.pi) / a
     n_prime = ((n+1) * math.pi) / a
-    mpn = m_prime + n_prime
-    mmn = m_prime - n_prime
-    for well_i, (lower, upper) in enumerate(bounds):
+    npm = n_prime + m_prime
+    nmm = n_prime - m_prime
+
+    # Add the contribution of the background
+    H[n, m] = H[n, m] + V_max*(np.sin(nmm)/nmm - np.sin(npm)/npm)
+
+    # Now add the contribution for each well
+    for well_i, (lower, upper) in enumerate(normed_bounds):
         if lower != upper:
-            V_i = v( (lower+upper)/2.0 ) # Just get the potential in the middle of the well, should be constant anyway
+            H[n, m] = H[n, m] + depths[well_i] * ((np.sin(nmm*lower) - np.sin(nmm*upper))/nmm +
+                                         (np.sin(npm*upper) - np.sin(npm*lower))/npm)
 
-            # We are normalizing the x domain to be between 0 and 1. Note, this is done after evaluating
-            # the potential above, since v is in terms of the original widths
-            lower = lower / w_tot
-            upper = upper / w_tot
+    # Now do the same for the diagonal
+    n = np.arange(nt)
+    n_prime = ((n + 1) * math.pi) / a
+    n_prime2 = 2 * n_prime
+    H[n, n] = V_max * (1 - np.sin(n_prime2)/n_prime2)
+    for well_i, (lower, upper) in enumerate(normed_bounds):
+        if lower != upper:
+            H[n, n] = H[n, n] + depths[well_i] * (lower - upper + (np.sin(n_prime2*upper) - np.sin(n_prime2*lower))/n_prime2)
 
-            H[n, m] = H[n, m] + V_i / (a * E1) * ((1.0/mpn)*(np.sin(upper * mpn) - np.sin(lower * mpn)) +
-                                                  (1.0/mmn)*(np.sin(lower * mmn) - np.sin(upper * mmn)))
-
-    # Compute the diagonal
-    H = np.diag(((np.arange(nt) + 1)**2 * math.pi**2) / (2.0 * a**2)) - H
+    H[n, n] = E_0 + H[n, n]
 
     # Get the eigen values and vectors using LAPACK
-    E, psi, info = dsyevd(H)
+    E, c, info = dsyevd(H)
 
     # Check if things went well
     if info < 0:
@@ -150,11 +160,15 @@ def marsiglio(
     elif info > 0:
         raise ValueError("Eigensolver failed to converge.")
 
-    # Eigen values already sorted (from least to greatest) from dsyevd
-    # Take only the eigenvectors greater than 0 and less than bg
-    inds = np.where((E > 0) & (E < bg))[0]
+    # Take only the eigenvalues greater than 0 and less than the V_max
+    inds = np.where((E > 0) & (E < V_max))[0]
     E = E[inds]
-    psi = psi[:, inds]
+
+    # Define the wave function
+    m = np.arange(nt)
+    m_prime = ((m + 1) * math.pi) / a
+    def psi(x):
+        return np.sqrt(2.0 * a) * np.matmul(np.sin(m_prime * x[:, None]), c)
 
     return E, psi
 

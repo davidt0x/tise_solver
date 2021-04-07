@@ -1,5 +1,6 @@
 from tise_solver.marsiglio import harmonic, marsiglio
 from tise_solver.one_well_analytic import one_well_energies
+from tise_solver.potentials import calc_background_width
 
 import pytest
 import numpy as np
@@ -46,9 +47,13 @@ def test_many_wells(widths, depths, separations, width_bg):
 
 
 @pytest.mark.parametrize("width,depth,separation,width_bg", [
-    (3.0, 10.0, [], 0.0),
+    (3.0, 10.0, [], None),
 ])
 def test_one_well_marsiglio(width, depth, separation, width_bg):
-    r = marsiglio(widths=[width], depths=[depth], separations=separation, width_bg=width_bg)
-
+    E, psi = marsiglio(widths=[width], depths=[depth], separations=separation, width_bg=width_bg)
     s = one_well_energies(depth=depth, width=width)
+
+    x = np.linspace(0.0, 2*calc_background_width(depth) + width, num=100)
+    psi_x = psi(x)
+
+    assert np.allclose(E, s, atol=1e-1)
