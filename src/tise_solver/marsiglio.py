@@ -117,7 +117,7 @@ def marsiglio(
 
     # Normalize the bounds of the wells
     # We are normalizing the x domain to be between 0 and 1.
-    normed_bounds = [(lower/w_tot, upper/w_tot) for (lower, upper) in bounds]
+    normed_bounds = [(lower/a, upper/a) for (lower, upper) in bounds]
 
     # Compute the eigen energies of the infinite embedding well
     E_0 = (((np.arange(nt) + 1)) ** 2 * math.pi ** 2) / (2.0 * a ** 2)
@@ -135,7 +135,7 @@ def marsiglio(
     H[n, m] = H[n, m] + V_max*(np.sin(nmm)/nmm - np.sin(npm)/npm)
 
     # Now add the contribution for each well
-    for well_i, (lower, upper) in enumerate(normed_bounds):
+    for well_i, (lower, upper) in enumerate(bounds):
         if lower != upper:
             H[n, m] = H[n, m] + depths[well_i] * ((np.sin(nmm*lower) - np.sin(nmm*upper))/nmm +
                                          (np.sin(npm*upper) - np.sin(npm*lower))/npm)
@@ -145,9 +145,9 @@ def marsiglio(
     n_prime = ((n + 1) * math.pi) / a
     n_prime2 = 2 * n_prime
     H[n, n] = V_max * (1 - np.sin(n_prime2)/n_prime2)
-    for well_i, (lower, upper) in enumerate(normed_bounds):
+    for well_i, (lower, upper) in enumerate(bounds):
         if lower != upper:
-            H[n, n] = H[n, n] + depths[well_i] * (lower - upper + (np.sin(n_prime2*upper) - np.sin(n_prime2*lower))/n_prime2)
+             H[n, n] = H[n, n] + depths[well_i] * (lower - upper + (np.sin(n_prime2*upper) - np.sin(n_prime2*lower))/n_prime2)
 
     H[n, n] = E_0 + H[n, n]
 
@@ -161,6 +161,7 @@ def marsiglio(
         raise ValueError("Eigensolver failed to converge.")
 
     # Take only the eigenvalues greater than 0 and less than the V_max
+    E = np.array([np.sum(c[:, i] * E[i]) for i in range(nt)])
     inds = np.where((E > 0) & (E < V_max))[0]
     E = E[inds]
 

@@ -86,7 +86,9 @@ def numerov(widths: List[float],
         sys_eq = scipy.sparse.linalg.spsolve(B, A) + V
 
         # FIXME: We need the equation that Lena said she would provide for k, the number of eigen values to compute
-        E, psi = scipy.sparse.linalg.eigsh(A=sys_eq, k=20, sigma=0)
+        X = scipy.sparse.diags([sys_eq.diagonal(k) for k in range(20, -1, -1)], range(20, -1, -1))
+        E, psi = scipy.linalg.eig_banded(X.data, select='v', select_range=(0, max(depths)), max_ev=10)
+        #E, psi = scipy.sparse.linalg.eigsh(A=sys_eq, k=20, sigma=0)
     else:
         raise ValueError("Invalid string passed to method argument, must be either 'sparse' or 'dense'")
 
@@ -130,7 +132,7 @@ def numerov(widths: List[float],
 
 
 def main():
-    r = numerov()
+    r = numerov(widths=[3.0], depths=[10.0], dx=0.01, method='sparse')
 
 
 if __name__ == "__main__":

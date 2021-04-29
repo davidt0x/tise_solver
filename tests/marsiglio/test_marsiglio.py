@@ -50,8 +50,8 @@ def test_many_wells(widths, depths, separations, width_bg):
     (3.0, 10.0, [], None),
 ])
 def test_one_well_marsiglio(width, depth, separation, width_bg):
-    E, psi = marsiglio(widths=[width], depths=[depth], separations=separation, width_bg=width_bg)
     s = one_well_energies(depth=depth, width=width)
+    E, psi = marsiglio(widths=[width], depths=[depth], separations=separation, width_bg=width_bg)
 
     x = np.linspace(0.0, 2*calc_background_width(depth) + width, num=100)
     psi_x = psi(x)
