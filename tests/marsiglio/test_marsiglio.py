@@ -47,7 +47,7 @@ def test_many_wells(widths, depths, separations, width_bg):
 
 
 @pytest.mark.parametrize("width,depth,separation,width_bg", [
-    (3.0, 10.0, [], None),
+    (10.0, 5.0, [], None),
 ])
 def test_one_well_marsiglio(width, depth, separation, width_bg):
     s = one_well_energies(depth=depth, width=width)

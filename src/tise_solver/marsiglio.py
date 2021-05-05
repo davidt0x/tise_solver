@@ -161,7 +161,7 @@ def marsiglio(
         raise ValueError("Eigensolver failed to converge.")
 
     # Take only the eigenvalues greater than 0 and less than the V_max
-    E = np.array([np.sum(c[:, i] * E[i]) for i in range(nt)])
+    #E = np.array([np.sum(c[:, i] * E[i]) for i in range(nt)])
     inds = np.where((E > 0) & (E < V_max))[0]
     E = E[inds]
 

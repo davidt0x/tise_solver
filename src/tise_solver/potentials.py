@@ -191,14 +191,3 @@ def calc_min_debroglie_wavelength(max_depth: float):
 
 def calc_background_width(max_depth: float):
     return 2.0 * calc_min_debroglie_wavelength(max_depth)
-
-    # find the minimum debroglie wavelength:
-    lamb=2*math.pi/(sqrt(2.0 * max_depth));
-
-    # define step size based on lambda
-    dx = lamb / (2.0 * pi);
-
-    # set the width of the background (for either side)
-    width_bg = 2.0 * lamb;
-
-    return width_bg
