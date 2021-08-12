@@ -119,37 +119,35 @@ def marsiglio(
     # We are normalizing the x domain to be between 0 and 1.
     normed_bounds = [(lower/a, upper/a) for (lower, upper) in bounds]
 
-    # Compute the eigen energies of the infinite embedding well
-    E_0 = (((np.arange(nt) + 1)) ** 2 * math.pi ** 2) / (2.0 * a ** 2)
-
     H = np.zeros((nt, nt))
 
     # Construct the non-diagonal portion of the matrix first.
-    n, m = np.triu_indices(n=nt, k=1)
-    m_prime = ((m+1) * math.pi) / a
-    n_prime = ((n+1) * math.pi) / a
-    npm = n_prime + m_prime
-    nmm = n_prime - m_prime
-
-    # Add the contribution of the background
-    H[n, m] = H[n, m] + V_max*(np.sin(nmm)/nmm - np.sin(npm)/npm)
+    p, q = np.triu_indices(n=nt, k=1)
+    pp = p + 1.0
+    qq = q + 1.0
+    qmp = (qq - pp)
+    ppq = (pp + qq)
 
     # Now add the contribution for each well
     for well_i, (lower, upper) in enumerate(bounds):
         if lower != upper:
-            H[n, m] = H[n, m] + depths[well_i] * ((np.sin(nmm*lower) - np.sin(nmm*upper))/nmm +
-                                         (np.sin(npm*upper) - np.sin(npm*lower))/npm)
+            pi_a = (math.pi / a)
+            H_w = (1 / (pp - qq)) * (np.sin(upper * qmp * pi_a) - np.sin(lower * qmp * pi_a)) + \
+                  (1 / (pp + qq)) * (np.sin(upper * ppq * pi_a) - np.sin(lower * ppq * pi_a))
+
+            H[p, q] = H[p, q] + (depths[well_i] / math.pi) * H_w
 
     # Now do the same for the diagonal
-    n = np.arange(nt)
-    n_prime = ((n + 1) * math.pi) / a
-    n_prime2 = 2 * n_prime
-    H[n, n] = V_max * (1 - np.sin(n_prime2)/n_prime2)
+    p = np.arange(nt)
+    pp = p + 1
+    pp2pi = 2.0 * pp * math.pi
+
+    H[p, p] = (1 / 2) * (pp * math.pi / a)**2 + V_max
     for well_i, (lower, upper) in enumerate(bounds):
         if lower != upper:
-             H[n, n] = H[n, n] + depths[well_i] * (lower - upper + (np.sin(n_prime2*upper) - np.sin(n_prime2*lower))/n_prime2)
+            H_w = (pp2pi / a) * (upper - lower) + np.sin(pp2pi * (lower/a)) - np.sin(pp2pi * (upper/a))
+            H[p, p] = H[p, p] - (depths[well_i] / pp2pi) * H_w
 
-    H[n, n] = E_0 + H[n, n]
 
     # Get the eigen values and vectors using LAPACK
     E, c, info = dsyevd(H)
@@ -165,13 +163,7 @@ def marsiglio(
     inds = np.where((E > 0) & (E < V_max))[0]
     E = E[inds]
 
-    # Define the wave function
-    m = np.arange(nt)
-    m_prime = ((m + 1) * math.pi) / a
-    def psi(x):
-        return np.sqrt(2.0 * a) * np.matmul(np.sin(m_prime * x[:, None]), c)
-
-    return E, psi
+    return E, c
 
 
 def main():
