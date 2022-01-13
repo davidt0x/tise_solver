@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
             # Run to time it
             e = timeit.timeit(stmt=f"numerov(widths=[3.0], depths=[10.0], separations=[], dx={dx}, method='{method}')",
-                          setup="from tise_solver.numerov import numerov", number = 1)
+                          setup="from tise_solver.numerov import numerov", number=1)
             print(f'method={method}, dx={dx}, n_steps={n_steps}, time={e}')
             results.append((method, dx, n_steps, e))
 
