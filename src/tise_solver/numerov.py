@@ -2,6 +2,7 @@ import math
 import numpy as np
 import scipy.sparse
 import scipy.sparse.linalg
+from scipy.linalg.lapack import dsyevd
 
 from typing import List, Union, Optional
 
@@ -13,6 +14,7 @@ def numerov(widths: List[float],
             separations: List[float] = None,
             width_bg: Optional[float] = None,
             dx: Optional[float] = None,
+            n_steps: Optional[int] = None,
             method: str = 'dense'):
     """
     Solve the TISE for a potential with N square wells via the matrix numerov method.
@@ -73,7 +75,8 @@ def numerov(widths: List[float],
                         np.diag(np.ones(n_steps - 1), -1) +
                         np.diag(np.ones(n_steps - 1), 1))
         sys_eq = np.linalg.lstsq(B, A, rcond=None)[0] + V
-        E, psi = np.linalg.eig(sys_eq)
+        #E, psi = np.linalg.eig(sys_eq)
+        E, psi, info = dsyevd(sys_eq)
 
     elif method == 'sparse':
         V = scipy.sparse.diags([v], [0], format='csc')

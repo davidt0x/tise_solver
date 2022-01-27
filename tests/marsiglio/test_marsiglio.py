@@ -51,6 +51,6 @@ def test_many_wells(widths, depths, separations, width_bg):
 ])
 def test_one_well_marsiglio(width, depth, separation, width_bg):
     s = one_well_energies(depth=depth, width=width)
-    E, psi = marsiglio(widths=[width], depths=[depth], separations=separation, width_bg=width_bg)
+    r = marsiglio(widths=[width], depths=[depth], separations=separation, width_bg=width_bg)
 
-    assert np.allclose(E, s, atol=1e-1)
+    assert np.allclose(r['E'], s, atol=1e-1)

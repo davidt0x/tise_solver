@@ -2,7 +2,11 @@ import warnings
 import numpy as np
 from scipy.optimize import fsolve
 
+
 def solve(func, x0):
+    """
+    Wrapper for fsolve that catches warnings and returns NaN if the solve failed.
+    """
     with warnings.catch_warnings(record=True) as w:
         x, infodict, ier, mesg = fsolve(func=func, x0=x0, full_output=True)
 
@@ -11,12 +15,18 @@ def solve(func, x0):
     else:
         return np.nan
 
+
 def cot(x):
+    """
+    Compute the cotangent of x.
+    """
     return np.cos(x)/np.sin(x)
+
 
 def uniquetol(r, tol=1e-6) -> np.array:
     """
     Compute the unique elements of vector within some floating point tolerance
+
     Args:
         r: Vector to find unique elements from.
         tol: The tolerance to apply
@@ -26,8 +36,11 @@ def uniquetol(r, tol=1e-6) -> np.array:
     """
     return r[~(np.triu(np.abs(r[:, None] - r) <= tol, 1)).any(0)]
 
-def one_well_energies(depth: float, width: float, tolerance=1e-6):
 
+def one_well_energies(depth: float, width: float, tolerance=1e-6):
+    """
+    Find the analytic energies of a one-well square potential.
+    """
     # Figure out how many energies we are supposed to have
     v_0 = np.sqrt(width ** 2 * depth / 2.0)
     N = int(np.floor(0.5 + v_0/np.pi) + np.floor(v_0/np.pi) + 1)

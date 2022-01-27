@@ -1,5 +1,6 @@
 #%%
 from tise_solver.potentials import n_square_wells, n_square_wells_bounds, calc_background_width
+from tise_solver.potentials import calc_min_debroglie_wavelength
 
 from typing import List, Union
 
@@ -76,8 +77,7 @@ def marsiglio(
     depths: List[float],
     separations: List[float],
     width_bg: Union[float, None] = None,
-    nt: int = 900,
-    omega: float = 50.0
+    nt: int = None,
 ):
     """
     Solve the TISE for a potential of N square wells using Frank's method.
@@ -89,8 +89,7 @@ def marsiglio(
         width_bg: The width from the lower bound of the domain and the leftmost edge of the first well. Similarly,
             the width from the rightmost edge of the last well and the upper bound of the domain. If None, then
             width_bg = int(np.ceil(10.0 * 2 * math.pi * (1 / np.sqrt(2.0 * max(depths))))
-        nt: The number of terms
-        omega: FIXME: Something, in units of E_1 === (pi^2*hbar^2)/(2*m_0*a^2)
+        nt: The number of terms. This will default to
 
     Returns:
     
@@ -110,14 +109,19 @@ def marsiglio(
     # Find the width of the infinite well that all the wells are embedded into
     w_tot = np.sum(widths) + np.sum(separations) + 2.0 * width_bg
 
+    # Concatenate all the widths (background, wells, separations)
+    pot_widths = [width_bg] + [x for t in zip(widths, separations) for x in t] + [widths[-1], width_bg]
+
+    # Pretend like we are doing the Numerov method and discretize the domain of the potential, this is only used if
+    # nt is not specified. This is will atleast make comparing to the Numerov method easier.
+    if nt is None:
+        dx = calc_min_debroglie_wavelength(max(depths)) / (2.0 * math.pi)
+        nt = int(sum([np.ceil(w / dx) for w in pot_widths]))
+
     # Lets fix the infinite well width to unitary, we will normalize x by w_tot
     a = w_tot
 
     V_max = max(depths)
-
-    # Normalize the bounds of the wells
-    # We are normalizing the x domain to be between 0 and 1.
-    normed_bounds = [(lower/a, upper/a) for (lower, upper) in bounds]
 
     H = np.zeros((nt, nt))
 
@@ -163,7 +167,7 @@ def marsiglio(
     inds = np.where((E > 0) & (E < V_max))[0]
     E = E[inds]
 
-    return E, c
+    return dict(E=E, c=c)
 
 
 def main():
