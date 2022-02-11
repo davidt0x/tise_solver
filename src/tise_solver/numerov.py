@@ -68,15 +68,31 @@ def numerov(widths: List[float],
 
     if method == 'dense':
         V = np.diag(v)
-        A = (-1.0 / beta) * (1.0 / dx ** 2.0) * (np.diag(-2.0 * np.ones(n_steps)) +
-                                                 np.diag(np.ones(n_steps - 1), -1) +
-                                                 np.diag(np.ones(n_steps - 1), 1))
-        B = (1 / 12) * (np.diag(10 * np.ones(n_steps)) +
-                        np.diag(np.ones(n_steps - 1), -1) +
-                        np.diag(np.ones(n_steps - 1), 1))
-        sys_eq = np.linalg.lstsq(B, A, rcond=None)[0] + V
+        # A = (-1.0 / beta) * (1.0 / dx ** 2.0) * (np.diag(-2.0 * np.ones(n_steps)) +
+        #                                          np.diag(np.ones(n_steps - 1), -1) +
+        #                                          np.diag(np.ones(n_steps - 1), 1))
+        A = np.zeros((n_steps, n_steps), order='F')
+        np.fill_diagonal(A, (-1.0 / beta) * (1.0 / dx ** 2.0) * -2.0)
+        np.fill_diagonal(A[1:,:], (-1.0 / beta) * (1.0 / dx ** 2.0))
+        np.fill_diagonal(A[:, 1:], (-1.0 / beta) * (1.0 / dx ** 2.0))
+
+        # B = (1 / 12) * (np.diag(10 * np.ones(n_steps)) +
+        #                 np.diag(np.ones(n_steps - 1), -1) +
+        #                 np.diag(np.ones(n_steps - 1), 1))
+
+        # sys_eq = np.linalg.lstsq(B, A, rcond=None)[0] + V
+        B_diag = 10.0 / 12.0 * np.ones(n_steps)
+        B_off_diag = (1 / 12.0) * np.ones(n_steps - 1)
+
+        # Solve the system of equations in place
+        scipy.linalg.lapack.dptsv(B_diag, B_off_diag, A,
+                                  overwrite_d=True,
+                                  overwrite_e=True,
+                                  overwrite_b=True)
+        A = A + V
+
         #E, psi = np.linalg.eig(sys_eq)
-        E, psi, info = dsyevd(sys_eq)
+        E, psi, info = dsyevd(A)
 
     elif method == 'sparse':
         V = scipy.sparse.diags([v], [0], format='csc')
